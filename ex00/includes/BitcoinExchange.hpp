@@ -5,31 +5,37 @@
 # include <iostream>
 # include <map>
 # include <string>
-# include <stdio.h>
 # include <sstream>
 # include <cstdlib>
+# include <exception>
 
 class BitcoinExchange
 {
   private:
-	struct
-	{
-		float	value;
-		std::string date;
-	} LineData;
 	std::map<std::string, float> btcData;
   public:
 	BitcoinExchange();
 	BitcoinExchange(const BitcoinExchange& other);
 	BitcoinExchange& operator=(const BitcoinExchange& other);
 	~BitcoinExchange();
-	void fillData(std::string string);
-	void handleInputFile(std::string fileName);
-	void checkValues( float value);
-	void checkDate(int year, int month, int day);
+	void validInputFile(std::string fileName);
+	int checkDate(int year, int month, int day, std::string line);
 	int isLeapYear(int year);
-	void findDateAndCalculate();
-	void printMap();
+	void findDateAndCalculate(std::string date, float value);
+	void showMap();
+
+	class FileNotFound : public std::exception {
+		public :
+			virtual const char *what() const throw();
+	};
+	class FileInputError : public std::exception {
+		public :
+			virtual const char *what() const throw();
+	};
+	class FileEmpty : public std::exception {
+		public :
+			virtual const char *what() const throw();
+	};
 };
 
 #endif

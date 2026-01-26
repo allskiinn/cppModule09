@@ -6,7 +6,7 @@
 #    By: aliberal <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/08 17:09:48 by aliberal          #+#    #+#              #
-#    Updated: 2026/01/21 01:32:54 by aliberal         ###   ########.fr        #
+#    Updated: 2026/01/26 22:35:26 by aliberal         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,11 +14,12 @@
 FLAGS = -Wall -Wextra -Werror -std=c++98
 CC = c++
 RM = rm -rf
-NAME = array
+NAME = PmergeMe
 SRCS = ./srcs/main.cpp ./srcs/PmergeMe.cpp
 DIROBJS = objectos
 OBJS = $(addprefix $(DIROBJS)/,$(SRCS:.cpp=.o))
 CLEAR = clear
+HEADER = ./includes/PmergeMe.hpp
 
 all: $(NAME)
 
@@ -27,7 +28,7 @@ $(NAME): $(OBJS)
 	$(CC) $(FLAGS) $(OBJS) -o $(NAME)
 	@echo "executed successfully..."
 
-$(DIROBJS)/%.o: %.cpp
+$(DIROBJS)/%.o: %.cpp $(HEADER)
 	mkdir -p $(@D)
 	$(CC) $(FLAGS) -c $< -o $@
 

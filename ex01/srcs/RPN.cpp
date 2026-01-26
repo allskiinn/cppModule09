@@ -1,24 +1,19 @@
 #include "../includes/RPN.hpp"
 #include <cctype>
 
-/***************************************Orthodox Canonical Form***************************************/
-RPN::RPN(){}
 RPN::~RPN(){}
 RPN& RPN::operator=(const RPN &src) {
     if (this != &src) {
-        this->operand = src.operand;
-        this->resault = src.resault;
+        this->result = src.result;
         this->Stack = src.Stack; 
     }
     return *this;
 }
 RPN::RPN(const RPN &src) {
-    this->operand = src.operand;
-    this->resault = src.resault;
+    this->result = src.result;
     this->Stack = src.Stack;
 }
 
-/**************************************Utility functions part***************************************/
 bool RPN::operatorIsValid(char Operator)
 {
 	if (Operator == '/' || Operator == '+' || Operator == '-'
@@ -27,45 +22,77 @@ bool RPN::operatorIsValid(char Operator)
 	else
 		return (false);
 }
-void RPN::checkRpn(std::string &rpn, int index)
+
+int RPN::checkRpn(std::string &rpn, int index)
 {
-  if (!isdigit(rpn[index]) && rpn[index] != ' ' && operatorIsValid(rpn[index]) == false && rpn[index] != ' ')
-    throw ": invalid char";
-	if (index == 0 && !isdigit(rpn[index]))
-		throw "";
+	if (!isdigit(rpn[index]) && rpn[index] != ' ' && operatorIsValid(rpn[index]) == false && rpn[index] != ' ')
+	{
+		std::cerr << "Error" << std::endl;
+		return (1);
+	}
+	if ((index == 0 || index == 2) && !isdigit(rpn[index]))
+	{
+		std::cerr << "Error" << std::endl;
+		return (1);
+	}
 	else if (isdigit(rpn[index]) && rpn[index + 1] != ' ')
-		throw "";
-	else if (this->operatorIsValid(rpn[index]) && rpn[index + 1] != ' '
+	{
+		std::cerr << "Error" << std::endl;
+		return (1);
+	}
+	else if ((index != 0) && isdigit(rpn[index]) && rpn[index + 1] == ' ' && !operatorIsValid(rpn[index + 2]))
+	{
+		std::cerr << 0 << std::endl;
+		return (1);
+	}
+	else if (operatorIsValid(rpn[index]) && rpn[index + 1] != ' '
 			&& rpn[index + 1] != 0)
-		throw "";
-	else if (this->operatorIsValid(rpn[index]) && Stack.size() < 2)
-		throw "";
+	{
+		std::cerr << "Error" << std::endl;
+		return (1);
+	}
+	else if (operatorIsValid(rpn[index]) && Stack.size() < 2)
+	{
+		std::cerr << "Error" << std::endl;
+		return (1);
+	}
+	else if (operatorIsValid(rpn[index]) && rpn[index + 1] == 0 && Stack.size() < 2)
+	{
+		std::cerr << "Error" << std::endl;
+		return (1);
+	}
+	return (0);
 }
 
-RPN::RPN(std::string rpn) : resault(0)
+RPN::RPN(std::string rpn) : result(0)
 {
+	int valid = 0;
+	double second, first;
 	for (int index = 0; rpn[index]; index++)
 	{
-		checkRpn(rpn, index);
+		if (checkRpn(rpn, index) == 1){ valid = 1; break ;} ;
 		if (isdigit(rpn[index]))
 			Stack.push(rpn[index] - 48);
 		else if (Stack.size() >= 2 && operatorIsValid(rpn[index]) == true)
 		{
-			operand.secend = Stack.top();
+			second = Stack.top();
 			Stack.pop();
-			operand.first = Stack.top();
+			first = Stack.top();
 			Stack.pop();
-			if (rpn[index] == '/' && operand.secend == 0)
-				throw " : division by zero";
-			resault = (rpn[index] == '+') ? (operand.first
-				+ operand.secend ): (rpn[index] == '-') ? (operand.first
-				- operand.secend) : (rpn[index] == '*') ? (operand.first
-				* operand.secend) : (operand.first / operand.secend);
-			Stack.push(resault);
+			if (rpn[index] == '/' && second == 0)
+			{
+				std::cerr << "Error" << std::endl;
+				valid = 1;
+				break ;
+			}
+			result = (rpn[index] == '+') ? (first
+				+ second ): (rpn[index] == '-') ? (first
+				- second) : (rpn[index] == '*') ? (first
+				* second) : (first / second);
+			Stack.push(result);
 		}
 	}
-	if (Stack.size() == 1)
-		std::cout << Stack.top() << std::endl;
-	else
-		throw "";
+	if (valid == 0)
+		if (Stack.size() == 1)
+			std::cout << Stack.top() << std::endl;
 }

@@ -1,18 +1,12 @@
 
 #include "../includes/RPN.hpp"
 
-int	main(int argc, char **argv)
+int	main(int ac, char **av)
 {
-	try
-	{
-		if (argc != 2)
-		{
-			throw ": invalid number of argumnts";
-		}
-		RPN rpn(argv[1]);
+	if (ac != 2) {
+		std::cerr << "invalid number of argumnts" << std::endl;
+		return (1);
 	}
-	catch (const char *error)
-	{
-		std::cout << "Error" << error << std::endl;
-	}
+	RPN rpn(av[1]);
+	return (0);
 }

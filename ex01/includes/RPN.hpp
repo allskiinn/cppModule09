@@ -8,20 +8,15 @@
 class RPN
 {
     private:
-        struct{
-            double first;
-            double secend;
-        } operand;
-        double resault;
+        double result;
         std::stack<double> Stack;
-    public:
         RPN();
+    public:
         RPN(std::string rpn);
         RPN(const RPN &src);
         RPN & operator=(const RPN &src);
         ~RPN();
         bool operatorIsValid(char Operator);
-        void checkRpn(std::string &rpn, int index);
-
+        int checkRpn(std::string &rpn, int index);
 };
 #endif

@@ -1,29 +1,24 @@
 #include "../includes/BitcoinExchange.hpp"
-#include <string>
-#include <map>
-#include <iostream>
-#include <iostream>
-#include <fstream>
-#include <string>
 
-//todo error msg need to be excat look at subject and need more test
-int main(int argc, char **argv)
+int main(int ac, char **av)
 {
-    if(argc < 2)
-    {
+    if (ac < 2) {
         std::cout << "Error: could not open file." << std::endl;
         return (1);
-    } 
-    try{
-    if (argc > 2)
-        throw static_cast<std::string>("too many args");
-    BitcoinExchange  bitcoin;
-    bitcoin.handleInputFile(argv[1]);
-    // bitcoin.printMap();
+    }
+    if (ac > 2) {
+        std::cout << "too many args" << std::endl;
+        return (1);
+    }
+    try {
+        BitcoinExchange  bitcoin;
+        BitcoinExchange  b;
 
+        b = bitcoin;
+        b.validInputFile(av[1]);
+        // b.showMap();
+    } catch(std::exception& e) {
+        std::cout << e.what() << std::endl;
     }
-    catch(std::string error)
-    {
-        std::cout << "Error : " << error << std::endl;
-    }
+    return (0);
 }
