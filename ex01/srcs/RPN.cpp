@@ -1,98 +1,83 @@
 #include "../includes/RPN.hpp"
 #include <cctype>
 
+RPN::RPN(){}
 RPN::~RPN(){}
 RPN& RPN::operator=(const RPN &src) {
     if (this != &src) {
-        this->result = src.result;
-        this->Stack = src.Stack; 
+        this->numbers = src.numbers; 
     }
     return *this;
 }
 RPN::RPN(const RPN &src) {
-    this->result = src.result;
-    this->Stack = src.Stack;
+    this->numbers = src.numbers;
 }
 
-bool RPN::operatorIsValid(char Operator)
+void RPN::calc(std::string input)
 {
-	if (Operator == '/' || Operator == '+' || Operator == '-'
-		|| Operator == '*')
-		return (true);
-	else
-		return (false);
-}
+	for (size_t i = 0; i < input.size(); i++)
+	{
+		char c = input[i];
 
-int RPN::checkRpn(std::string &rpn, int index)
-{
-	if (!isdigit(rpn[index]) && rpn[index] != ' ' && operatorIsValid(rpn[index]) == false && rpn[index] != ' ')
-	{
-		std::cerr << "Error" << std::endl;
-		return (1);
-	}
-	if ((index == 0 || index == 2) && !isdigit(rpn[index]))
-	{
-		std::cerr << "Error" << std::endl;
-		return (1);
-	}
-	else if (isdigit(rpn[index]) && rpn[index + 1] != ' ')
-	{
-		std::cerr << "Error" << std::endl;
-		return (1);
-	}
-	else if ((index != 0) && isdigit(rpn[index]) && rpn[index + 1] == ' ' && !operatorIsValid(rpn[index + 2]))
-	{
-		std::cerr << 0 << std::endl;
-		return (1);
-	}
-	else if (operatorIsValid(rpn[index]) && rpn[index + 1] != ' '
-			&& rpn[index + 1] != 0)
-	{
-		std::cerr << "Error" << std::endl;
-		return (1);
-	}
-	else if (operatorIsValid(rpn[index]) && Stack.size() < 2)
-	{
-		std::cerr << "Error" << std::endl;
-		return (1);
-	}
-	else if (operatorIsValid(rpn[index]) && rpn[index + 1] == 0 && Stack.size() < 2)
-	{
-		std::cerr << "Error" << std::endl;
-		return (1);
-	}
-	return (0);
-}
-
-RPN::RPN(std::string rpn) : result(0)
-{
-	int valid = 0;
-	double second, first;
-	for (int index = 0; rpn[index]; index++)
-	{
-		if (checkRpn(rpn, index) == 1){ valid = 1; break ;} ;
-		if (isdigit(rpn[index]))
-			Stack.push(rpn[index] - 48);
-		else if (Stack.size() >= 2 && operatorIsValid(rpn[index]) == true)
+		if (c == ' ')
 		{
-			second = Stack.top();
-			Stack.pop();
-			first = Stack.top();
-			Stack.pop();
-			if (rpn[index] == '/' && second == 0)
-			{
-				std::cerr << "Error" << std::endl;
-				valid = 1;
-				break ;
-			}
-			result = (rpn[index] == '+') ? (first
-				+ second ): (rpn[index] == '-') ? (first
-				- second) : (rpn[index] == '*') ? (first
-				* second) : (first / second);
-			Stack.push(result);
+			// skip whitespace
+			continue;
+		}
+		else if (isdigit(c))
+		{
+			int number = c - '0';
+			numbers.push(number);
+		}
+		else if (c == '+' && numbers.size() >= 2)
+		{
+			double b = numbers.top();
+			numbers.pop();
+			double a = numbers.top();
+			numbers.pop();
+			numbers.push(a + b);
+		}
+		else if (c == '-' && numbers.size() >= 2)
+		{
+			double b = numbers.top();
+			numbers.pop();
+			double a = numbers.top();
+			numbers.pop();
+			numbers.push(a - b);
+		}
+		else if (c == '*' && numbers.size() >= 2)
+		{
+			double b = numbers.top();
+			numbers.pop();
+			double a = numbers.top();
+			numbers.pop();
+			numbers.push(a * b);
+		}
+		else if (c == '/' && numbers.size() >= 2)
+		{
+			double b = numbers.top();
+			numbers.pop();
+			double a = numbers.top();
+			numbers.pop();
+			numbers.push(a / b);
+		}
+		else
+		{
+			// invalid character or insufficient operands
+			std::cout << "Invalid input." << std::endl;
+			return;
 		}
 	}
-	if (valid == 0)
-		if (Stack.size() == 1)
-			std::cout << Stack.top() << std::endl;
+
+	if (numbers.size() == 1)
+	{
+		double result = numbers.top();
+		numbers.pop();
+		std::cout << "Result: " << result << std::endl;
+	}
+	else
+	{
+		// insufficient operands
+		std::cout << "Invalid input." << std::endl;
+	}
 }

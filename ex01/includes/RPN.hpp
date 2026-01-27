@@ -8,15 +8,12 @@
 class RPN
 {
     private:
-        double result;
-        std::stack<double> Stack;
-        RPN();
+        std::stack<double> numbers;
     public:
-        RPN(std::string rpn);
+        RPN();
         RPN(const RPN &src);
         RPN & operator=(const RPN &src);
         ~RPN();
-        bool operatorIsValid(char Operator);
-        int checkRpn(std::string &rpn, int index);
+        void calc(std::string input);
 };
 #endif
