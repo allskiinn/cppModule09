@@ -7,12 +7,13 @@
 # include <string>
 # include <sstream>
 # include <cstdlib>
+# include <climits>
 # include <exception>
 
 class BitcoinExchange
 {
   private:
-	std::map<std::string, float> btcData;
+	std::map<std::string, double> btcData;
   public:
 	BitcoinExchange();
 	BitcoinExchange(const BitcoinExchange& other);
@@ -21,7 +22,7 @@ class BitcoinExchange
 	void validInputFile(std::string fileName);
 	int checkDate(int year, int month, int day, std::string line);
 	int isLeapYear(int year);
-	void findDateAndCalculate(std::string date, float value);
+	void findDateAndCalculate(std::string date, double value);
 	void showMap();
 
 	class FileNotFound : public std::exception {

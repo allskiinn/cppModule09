@@ -1,11 +1,56 @@
 #include "../includes/BitcoinExchange.hpp"
 #include <iomanip>
+#include <cerrno>
+#include <cstring>
+
+static bool tryOpenDataCsv(std::ifstream &data)
+{
+	// O subject normalmente fornece um data.csv no diretório do exercício.
+	// Aqui tentamos alguns caminhos comuns para evitar falhas por cwd.
+	const char *paths[] = {"data.csv", "srcs/data.csv", 0};
+	for (int i = 0; paths[i]; ++i)
+	{
+		data.clear();
+		data.open(paths[i]);
+		if (data.is_open())
+			return true;
+	}
+	return false;
+}
+
+static bool parseStrictDouble(const std::string &s, double &out)
+{
+	char *end = 0;
+	errno = 0;
+	out = std::strtod(s.c_str(), &end);
+	if (errno != 0)
+		return false;
+	if (end == s.c_str() || *end != '\0')
+		return false;
+	return true;
+}
+
+static bool parseInputLine(const std::string &line, std::string &date, double &value)
+{
+	// Formato estrito: "YYYY-MM-DD | value" com espaços exatamente como acima.
+	if (line.size() < 14)
+		return false;
+	const std::string sep = " | ";
+	size_t pos = line.find(sep);
+	if (pos == std::string::npos)
+		return false;
+	date = line.substr(0, pos);
+	std::string valueStr = line.substr(pos + sep.size());
+	if (date.size() != 10 || valueStr.empty())
+		return false;
+	return parseStrictDouble(valueStr, value);
+}
 
 BitcoinExchange::BitcoinExchange()
 {
 	std::string date, value;
-	std::ifstream data("srcs/data.csv");
-	if (!data.is_open())
+	std::ifstream data;
+	if (!tryOpenDataCsv(data))
 		throw BitcoinExchange::FileNotFound();
 	std::string line;
 	getline(data, line);
@@ -14,7 +59,10 @@ BitcoinExchange::BitcoinExchange()
 		std::stringstream ln(line);
 		getline(ln, date, ',');
 		getline(ln, value);
-		btcData.insert(std::make_pair(date, atof(value.c_str())));
+		double d = 0.0;
+		if (!parseStrictDouble(value, d))
+			continue;
+		btcData.insert(std::make_pair(date, d));
 	}
 	data.close();
 };
@@ -23,13 +71,13 @@ BitcoinExchange::~BitcoinExchange(){};
 
 BitcoinExchange::BitcoinExchange(const BitcoinExchange &other)
 {
-	std::map<std::string, float>::const_iterator i;
+	std::map<std::string, double>::const_iterator i;
 	for (i = other.btcData.begin(); i != other.btcData.end(); ++i)
 		this->btcData[i->first] = i->second;
 };
 
 const char* BitcoinExchange::FileNotFound::what() const throw(){
-	return "cannot open file";
+	return "Error: could not open file.";
 }
 
 const char* BitcoinExchange::FileInputError::what() const throw(){
@@ -45,7 +93,7 @@ BitcoinExchange &BitcoinExchange::operator=(const BitcoinExchange &other)
 	if (this != &other)
 	{
 		this->btcData.clear();
-		std::map<std::string, float>::const_iterator it;
+		std::map<std::string, double>::const_iterator it;
 		for (it = other.btcData.begin(); it != other.btcData.end(); ++it)
 		{
 			this->btcData[it->first] = it->second;
@@ -59,7 +107,7 @@ void BitcoinExchange::validInputFile(std::string fileName)
 	int year;
 	int month;
 	int day;
-	float value;
+	double value;
 	std::string date;
 
 	std::string line;
@@ -74,30 +122,23 @@ void BitcoinExchange::validInputFile(std::string fileName)
 	{
 		if (firstLine)
 			firstLine = false;
-		if (line.length() < 14) {
-			std::cout << "Error : bad input => " << line << std::endl;
-			continue ;
-		} else if (sscanf((line.c_str()), "%d-%d-%d | %f", &year, &month, &day, &value) == 4)
+		if (!parseInputLine(line, date, value))
 		{
-			if (std::isspace(line[13]) || line[11] != '|' || line[line.length() - 1] == '.') {
-				std::cout << "Error : bad input => " << line << std::endl;
-				continue ;
-			}
-			if (value > 1000) std::cout << "Error: too large number." << std::endl;
-			else if (value < 0) std::cout << "Error: not a positive a number." << std::endl;
-			else {
-				if (!checkDate(year, month, day, line))
-				{
-					size_t pos;
-					pos = line.find(' ');
-					date = line.substr(0, pos);
-					findDateAndCalculate(date, value);
-				}
-			}
-		} else {
-			std::cout << "Error : bad input => " << line << std::endl;
-			continue ;
+			std::cout << "Error: bad input => " << line << std::endl;
+			continue;
 		}
+
+		if (sscanf(date.c_str(), "%d-%d-%d", &year, &month, &day) != 3)
+		{
+			std::cout << "Error: bad input => " << line << std::endl;
+			continue;
+		}
+		if (value > 1000.0)
+			std::cout << "Error: too large a number." << std::endl;
+		else if (value < 0.0)
+			std::cout << "Error: not a positive number." << std::endl;
+		else if (!checkDate(year, month, day, line))
+			findDateAndCalculate(date, value);
 	}
 	if (firstLine)
 		throw BitcoinExchange::FileEmpty();
@@ -112,7 +153,7 @@ int BitcoinExchange::isLeapYear(int year)
 int BitcoinExchange::checkDate(int year, int month, int day, std::string line)
 {
 	if (month < 1 || month > 12 || day < 1) {
-		std::cout << "Error : Invalid Date => " << line << std::endl;
+		std::cout << "Error: bad input => " << line << std::endl;
 		return 1;
 	}
 	int months[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -121,37 +162,38 @@ int BitcoinExchange::checkDate(int year, int month, int day, std::string line)
 		months[1] = 29;
 	if (day > months[month - 1])
 	{
-		std::cout << "Error : Invalid Day => " << line << std::endl;
+		std::cout << "Error: bad input => " << line << std::endl;
 		return 1;
 	}
+	// O dataset do subject começa em 2009-01-02; antes disso não existe taxa "anterior".
 	if (year < 2009 || (year == 2009 && month == 1 && day < 2))
 	{
-		std::cout << "Error : min year (2009-01-02) => " << line << std::endl;
-		return 1;
-	}
-	if (year > 2022 || (year == 2022 && month == 3 && day > 29))
-	{
-		std::cout << "Error : max year (2022-03-29) => " << line << std::endl;
+		std::cout << "Error: bad input => " << line << std::endl;
 		return 1;
 	}
 	return 0;
 }
 
-void BitcoinExchange::findDateAndCalculate(std::string date, float value)
+void BitcoinExchange::findDateAndCalculate(std::string date, double value)
 {
-	std::map<std::string, float>::iterator it;
+	std::map<std::string, double>::iterator it;
 	it = this->btcData.lower_bound(date);
+	if (btcData.empty())
+	{
+		std::cerr << "Error: database is empty" << std::endl;
+		return;
+	}
 	if (it == this->btcData.end()) {
 		it--;
 		std::cout << date << " => " << value << " = " << value * (*it).second << std::endl;
 		return ;
 	}
 	if (it == this->btcData.begin()) {
-		std::cerr << "cannot find any closer data" << std::endl;
+		std::cout << "Error: bad input => " << date << std::endl;
 		return ;
 	} else {
 		if ((*it).first != date) it--;
-		std::cout << date << " => " << value << " = " << (float)(value * (*it).second) << std::endl;
+		std::cout << date << " => " << value << " = " << (value * (*it).second) << std::endl;
 	}
 }
 

@@ -15,69 +15,60 @@ RPN::RPN(const RPN &src) {
 
 void RPN::calc(std::string input)
 {
-	for (size_t i = 0; i < input.size(); i++)
-	{
-		char c = input[i];
+	// O subject costuma exigir tokens separados por espaços:
+	// dígitos simples [0-9] e operadores [+ - * /].
+	while (!numbers.empty())
+		numbers.pop();
 
-		if (c == ' ')
+	std::stringstream ss(input);
+	std::string token;
+
+	while (ss >> token)
+	{
+		if (token.size() != 1)
 		{
-			// skip whitespace
-			continue;
-		}
-		else if (isdigit(c))
-		{
-			int number = c - '0';
-			numbers.push(number);
-		}
-		else if (c == '+' && numbers.size() >= 2)
-		{
-			double b = numbers.top();
-			numbers.pop();
-			double a = numbers.top();
-			numbers.pop();
-			numbers.push(a + b);
-		}
-		else if (c == '-' && numbers.size() >= 2)
-		{
-			double b = numbers.top();
-			numbers.pop();
-			double a = numbers.top();
-			numbers.pop();
-			numbers.push(a - b);
-		}
-		else if (c == '*' && numbers.size() >= 2)
-		{
-			double b = numbers.top();
-			numbers.pop();
-			double a = numbers.top();
-			numbers.pop();
-			numbers.push(a * b);
-		}
-		else if (c == '/' && numbers.size() >= 2)
-		{
-			double b = numbers.top();
-			numbers.pop();
-			double a = numbers.top();
-			numbers.pop();
-			numbers.push(a / b);
-		}
-		else
-		{
-			// invalid character or insufficient operands
-			std::cout << "Invalid input." << std::endl;
+			std::cerr << "Error" << std::endl;
 			return;
 		}
+		char c = token[0];
+		if (std::isdigit(c))
+		{
+			numbers.push(c - '0');
+			continue;
+		}
+		if (c != '+' && c != '-' && c != '*' && c != '/')
+		{
+			std::cerr << "Error" << std::endl;
+			return;
+		}
+		if (numbers.size() < 2)
+		{
+			std::cerr << "Error" << std::endl;
+			return;
+		}
+		double b = numbers.top(); numbers.pop();
+		double a = numbers.top(); numbers.pop();
+		if (c == '+')
+			numbers.push(a + b);
+		else if (c == '-')
+			numbers.push(a - b);
+		else if (c == '*')
+			numbers.push(a * b);
+		else
+		{
+			if (b == 0.0)
+			{
+				std::cerr << "Error" << std::endl;
+				return;
+			}
+			numbers.push(a / b);
+		}
 	}
 
-	if (numbers.size() == 1)
+	if (numbers.size() != 1)
 	{
-		double result = numbers.top();
-		numbers.pop();
-		std::cout << "Result: " << result << std::endl;
+		std::cerr << "Error" << std::endl;
+		return;
 	}
-	else
-	{
-		// insufficient operands
-		std::cout << "Invalid input." << std::endl;
-	}
+	std::cout << numbers.top() << std::endl;
 }

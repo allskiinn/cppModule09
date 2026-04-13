@@ -1,140 +1,212 @@
 #include "../includes/PmergeMe.hpp"
 
-PmergeMe::PmergeMe(){};
-PmergeMe::~PmergeMe(){};
-PmergeMe& PmergeMe::operator=(const PmergeMe& other) {
-    if (this == &other) {
-        return *this; 
-    }
-    return *this;
-};
-PmergeMe::PmergeMe(const PmergeMe& other){
-    (void)(other);
-};
-
-void PmergeMe::mergeInsertSortVector(std::vector<int> &vec, int start, int end)
+PmergeMe::PmergeMe(){}
+PmergeMe::~PmergeMe(){}
+PmergeMe& PmergeMe::operator=(const PmergeMe& other)
 {
-    int newEnd;
-    if (start < end)
-    {
-        if ((end - start) < 10)
-            insertSortVector(vec, start, end);
-        else
-        {
-            newEnd = start + (end - start) / 2;
-            mergeInsertSortVector(vec,  start, newEnd);
-            mergeInsertSortVector(vec, newEnd + 1, end);
-            mergeSortVector(vec, start, newEnd, end);
-        }
-    }
-};
-
-void PmergeMe::mergeSortVector(std::vector<int> &vec, int start, int mid, int end)
+	(void)other;
+	return *this;
+}
+PmergeMe::PmergeMe(const PmergeMe& other)
 {
-    int i, j , k;
+	(void)other;
+}
 
-    std::vector<int> left(mid - start + 1);
-    std::vector<int> right(end - mid);
+namespace {
 
-    for(i = 0; i < (mid - start + 1); ++i)
-        left[i] = vec[start + i];
-    for(j = 0; j < (end - mid); ++j)
-        right[j] = vec[mid + 1 + j];
-    i = 0;
-    j = 0;
-    k = start;
-    while(i < (mid - start + 1) && j < (end - mid))
-    {
-        if (left[i] <= right[j])
-            vec[k++] = left[i++];
-        else
-            vec[k++] = right[j++];
-    }
-
-    while(i < (mid - start + 1))
-        vec[k++] =  left[i++];
-    while (j < (end - mid))
-        vec[k++] = right[j++];
-};
-
-void PmergeMe::insertSortVector(std::vector<int> &vec, int start, int end)
+struct Node
 {
-    for(int index = (start + 1); index <= end; index++)
-    {
-        int hold = vec[index];
-        int j = index - 1;
-        for(; j >= start && vec[j] > hold; --j)
-            vec[j + 1] = vec[j];
-        vec[j + 1] = hold;
-    }
+	int value;
+	int pairIndex; // -1 para straggler
+	bool isMax;
+	Node() : value(0), pairIndex(-1), isMax(false) {}
+	Node(int v, int idx, bool m) : value(v), pairIndex(idx), isMax(m) {}
 };
 
-void PmergeMe::runVector(std::vector<int> &vec)
+struct Pair
 {
-    mergeInsertSortVector(vec, 0, vec.size() - 1);
+	int min;
+	int max;
+	int idx;
+	Pair() : min(0), max(0), idx(0) {}
+	Pair(int a, int b, int i) : min(a), max(b), idx(i) {}
 };
 
-void PmergeMe::runDeque(std::deque<int> &deq)
+static void mergePairsByMax(std::vector<Pair> &pairs, int l, int mid, int r)
 {
-    mergeInsertSortDeque(deq, 0, deq.size() - 1);
-};
+	std::vector<Pair> left(mid - l + 1);
+	std::vector<Pair> right(r - mid);
+	for (int i = 0; i < (mid - l + 1); ++i) left[i] = pairs[l + i];
+	for (int j = 0; j < (r - mid); ++j) right[j] = pairs[mid + 1 + j];
 
-void PmergeMe::mergeInsertSortDeque(std::deque<int> &deq, int start, int end)
+	int i = 0, j = 0, k = l;
+	while (i < (int)left.size() && j < (int)right.size())
+	{
+		if (left[i].max <= right[j].max)
+			pairs[k++] = left[i++];
+		else
+			pairs[k++] = right[j++];
+	}
+	while (i < (int)left.size()) pairs[k++] = left[i++];
+	while (j < (int)right.size()) pairs[k++] = right[j++];
+}
+
+static void sortPairsByMax(std::vector<Pair> &pairs, int l, int r)
 {
-    int newEnd;
-    if (start < end)
-    {
-        if ((end - start) < 10)
-            insertSortDeque(deq, start, end);
-        else
-        {
-            newEnd = start + (end - start) / 2;
-            mergeInsertSortDeque(deq,  start, newEnd);
-            mergeInsertSortDeque(deq, newEnd + 1, end);
-            mergeSortDeque(deq, start, newEnd, end);
-        }
-    }
-};
+	if (l >= r) return;
+	int mid = l + (r - l) / 2;
+	sortPairsByMax(pairs, l, mid);
+	sortPairsByMax(pairs, mid + 1, r);
+	mergePairsByMax(pairs, l, mid, r);
+}
 
-void PmergeMe::mergeSortDeque(std::deque<int> &deq, int start, int mid, int end)
+static size_t findMaxPos(const std::vector<Node> &mainChain, int pairIdx)
 {
-    int i, j , k;
+	for (size_t i = 0; i < mainChain.size(); ++i)
+	{
+		if (mainChain[i].isMax && mainChain[i].pairIndex == pairIdx)
+			return i;
+	}
+	return mainChain.size();
+}
 
-    std::deque<int> left(mid - start + 1);
-    std::deque<int> right(end - mid);
-
-    for(i = 0; i < (mid - start + 1); ++i)
-        left[i] = deq[start + i];
-    for(j = 0; j < (end - mid); ++j)
-        right[j] = deq[mid + 1 + j];
-    i = 0;
-    j = 0;
-    k = start;
-    while(i < (mid - start + 1) && j < (end - mid))
-    {
-        if (left[i] <= right[j])
-            deq[k++] = left[i++];
-        else
-            deq[k++] = right[j++];
-    }
-
-    while(i < (mid - start + 1))
-        deq[k++] =  left[i++];
-    while (j < (end - mid))
-        deq[k++] = right[j++];
-};
-
-void PmergeMe::insertSortDeque(std::deque<int> &deq, int start, int end)
+static size_t lowerBoundByValue(const std::vector<Node> &mainChain, int value, size_t hi)
 {
-    for(int index = (start + 1); index <= end; index++)
-    {
-        int hold = deq[index];
-        int j = index - 1;
-        for(; j >= start && deq[j] > hold; --j)
-            deq[j + 1] = deq[j];
-        deq[j + 1] = hold;
-    }
-};
+	size_t lo = 0;
+	while (lo < hi)
+	{
+		size_t mid = lo + (hi - lo) / 2;
+		if (mainChain[mid].value < value)
+			lo = mid + 1;
+		else
+			hi = mid;
+	}
+	return lo;
+}
+
+static std::vector<size_t> buildJacobsthalOrder(size_t n)
+{
+	// Gera uma ordem de inserção baseada em Jacobsthal:
+	// j(0)=0, j(1)=1, j(n)=j(n-1)+2*j(n-2)
+	// Usamos os "blocos" [j(k), j(k-1)) em ordem reversa para cobrir [1..n].
+	std::vector<size_t> order;
+	if (n == 0) return order;
+
+	std::vector<size_t> jac;
+	jac.push_back(0);
+	jac.push_back(1);
+	while (jac.back() < n)
+		jac.push_back(jac[jac.size() - 1] + 2 * jac[jac.size() - 2]);
+
+	size_t prev = 1;
+	for (size_t k = 2; k < jac.size(); ++k)
+	{
+		size_t curr = jac[k];
+		if (curr > n) curr = n;
+		for (size_t i = curr; i > prev; --i)
+			order.push_back(i);
+		prev = jac[k];
+		if (prev > n) prev = n;
+		if (prev == n) break;
+	}
+	// Se n==1, order fica vazio; a "primeira" inserção é trivial e já está na cadeia.
+	return order;
+}
+
+static std::vector<int> fordJohnsonSortToVector(const std::vector<int> &input)
+{
+	if (input.size() <= 1)
+		return input;
+
+	// 1) criar pares (min,max)
+	std::vector<Pair> pairs;
+	pairs.reserve(input.size() / 2);
+	bool hasStraggler = (input.size() % 2) != 0;
+	int straggler = 0;
+
+	int pairIdx = 0;
+	for (size_t i = 0; i + 1 < input.size(); i += 2)
+	{
+		int a = input[i];
+		int b = input[i + 1];
+		if (a <= b) pairs.push_back(Pair(a, b, pairIdx));
+		else pairs.push_back(Pair(b, a, pairIdx));
+		++pairIdx;
+	}
+	if (hasStraggler)
+		straggler = input.back();
+
+	// 2) ordenar pares por max
+	if (!pairs.empty())
+		sortPairsByMax(pairs, 0, (int)pairs.size() - 1);
+
+	// 3) construir main chain (maxes) e inserir o min do primeiro par
+	std::vector<Node> mainChain;
+	mainChain.reserve(input.size());
+	if (!pairs.empty())
+	{
+		mainChain.push_back(Node(pairs[0].min, pairs[0].idx, false));
+		mainChain.push_back(Node(pairs[0].max, pairs[0].idx, true));
+		for (size_t i = 1; i < pairs.size(); ++i)
+			mainChain.push_back(Node(pairs[i].max, pairs[i].idx, true));
+	}
+
+	// 4) inserir os mins restantes na ordem Jacobsthal, cada um antes do seu max
+	// mins restantes correspondem aos pares [1..pairs.size()-1]
+	size_t minsCount = (pairs.size() > 0) ? (pairs.size() - 1) : 0;
+	std::vector<size_t> order = buildJacobsthalOrder(minsCount);
+
+	for (size_t oi = 0; oi < order.size(); ++oi)
+	{
+		size_t idx1 = order[oi]; // 1..minsCount (1-based)
+		size_t pairPos = idx1;   // corresponde ao par idx1 em pairs (pois pairs[0] já inserido)
+		if (pairPos >= pairs.size())
+			continue;
+
+		int pIdx = pairs[pairPos].idx;
+		size_t hi = findMaxPos(mainChain, pIdx);
+		if (hi == mainChain.size())
+			hi = mainChain.size();
+		size_t pos = lowerBoundByValue(mainChain, pairs[pairPos].min, hi);
+		mainChain.insert(mainChain.begin() + pos, Node(pairs[pairPos].min, pIdx, false));
+	}
+
+	// Se por alguma razão a ordem não cobriu tudo (n pequeno), inserir o restante em ordem crescente de índice.
+	for (size_t i = 1; i < pairs.size(); ++i)
+	{
+		int pIdx = pairs[i].idx;
+		// já foi inserido?
+		bool found = false;
+		for (size_t k = 0; k < mainChain.size(); ++k)
+		{
+			if (!mainChain[k].isMax && mainChain[k].pairIndex == pIdx)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (found) continue;
+		size_t hi = findMaxPos(mainChain, pIdx);
+		size_t pos = lowerBoundByValue(mainChain, pairs[i].min, hi);
+		mainChain.insert(mainChain.begin() + pos, Node(pairs[i].min, pIdx, false));
+	}
+
+	// 5) inserir straggler (se existir) no lugar certo na cadeia inteira
+	if (hasStraggler)
+	{
+		size_t pos = lowerBoundByValue(mainChain, straggler, mainChain.size());
+		mainChain.insert(mainChain.begin() + pos, Node(straggler, -1, false));
+	}
+
+	// 6) extrair valores
+	std::vector<int> out;
+	out.reserve(mainChain.size());
+	for (size_t i = 0; i < mainChain.size(); ++i)
+		out.push_back(mainChain[i].value);
+	return out;
+}
+
+} // namespace
 
 void PmergeMe::caluclateTime(std::vector<int> &vec, std::deque<int> &deq, double &vecTime, double &deqTime)
 {
@@ -151,36 +223,26 @@ void PmergeMe::caluclateTime(std::vector<int> &vec, std::deque<int> &deq, double
     
 }
 
-void PmergeMe::showDeq(std::deque<int> &deq)
+void PmergeMe::runVector(std::vector<int> &vec)
 {
-
-    static int i = 0;
-
-    if (!i)
-        std::cout << "Before: ";
-    else
-        std::cout << "After: "; 
-
-    typedef typename std::deque<int>::const_iterator deq_iterator;
-    for (deq_iterator Dit = deq.begin(); Dit != deq.end(); ++Dit)
-		std::cout << *Dit << " ";
-    std::cout << std::endl;
-    i++;
+	std::vector<int> sorted = fordJohnsonSortToVector(vec);
+	vec.swap(sorted);
 }
 
-void PmergeMe::showVec(std::vector<int> &vec)
+void PmergeMe::runDeque(std::deque<int> &deq)
 {
+	std::vector<int> tmp;
+	tmp.reserve(deq.size());
+	for (std::deque<int>::const_iterator it = deq.begin(); it != deq.end(); ++it)
+		tmp.push_back(*it);
 
-    static int i = 0;
+	std::vector<int> sorted = fordJohnsonSortToVector(tmp);
+	deq.assign(sorted.begin(), sorted.end());
+}
 
-    if (!i)
-        std::cout << "Before: ";
-    else
-        std::cout << "After: "; 
-
-    typedef typename std::vector<int>::const_iterator vec_iterator;
-    for (vec_iterator Vit = vec.begin(); Vit != vec.end(); ++Vit)
-		std::cout << *Vit << " ";
-    std::cout << std::endl;
-    i++;
+void PmergeMe::printVector(const std::vector<int> &vec)
+{
+	for (std::vector<int>::const_iterator it = vec.begin(); it != vec.end(); ++it)
+		std::cout << *it << " ";
+	std::cout << std::endl;
 }
