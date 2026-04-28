@@ -18,13 +18,11 @@ NAME = RPN
 SRCS = ./srcs/main.cpp ./srcs/RPN.cpp 
 DIROBJS = objectos
 OBJS = $(addprefix $(DIROBJS)/,$(SRCS:.cpp=.o))
-CLEAR = clear
 HEADER = ./includes/RPN.hpp
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CLEAR)
 	$(CC) $(FLAGS) $(OBJS) -o $(NAME)
 	@echo "executed successfully..."
 
@@ -33,12 +31,10 @@ $(DIROBJS)/%.o: %.cpp $(HEADER)
 	$(CC) $(FLAGS) -c $< -o $@
 
 clean:
-	$(CLEAR)
 	$(RM) $(DIROBJS)
 	@echo "clean executed successfully..."
 
 fclean: clean
-	$(CLEAR)
 	$(RM) $(NAME)
 	@echo "fclean executed successfully..."
 

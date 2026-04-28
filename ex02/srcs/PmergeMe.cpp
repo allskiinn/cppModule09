@@ -86,9 +86,6 @@ static size_t lowerBoundByValue(const std::vector<Node> &mainChain, int value, s
 
 static std::vector<size_t> buildJacobsthalOrder(size_t n)
 {
-	// Gera uma ordem de inserção baseada em Jacobsthal:
-	// j(0)=0, j(1)=1, j(n)=j(n-1)+2*j(n-2)
-	// Usamos os "blocos" [j(k), j(k-1)) em ordem reversa para cobrir [1..n].
 	std::vector<size_t> order;
 	if (n == 0) return order;
 
@@ -109,7 +106,6 @@ static std::vector<size_t> buildJacobsthalOrder(size_t n)
 		if (prev > n) prev = n;
 		if (prev == n) break;
 	}
-	// Se n==1, order fica vazio; a "primeira" inserção é trivial e já está na cadeia.
 	return order;
 }
 
@@ -118,7 +114,6 @@ static std::vector<int> fordJohnsonSortToVector(const std::vector<int> &input)
 	if (input.size() <= 1)
 		return input;
 
-	// 1) criar pares (min,max)
 	std::vector<Pair> pairs;
 	pairs.reserve(input.size() / 2);
 	bool hasStraggler = (input.size() % 2) != 0;
@@ -136,11 +131,9 @@ static std::vector<int> fordJohnsonSortToVector(const std::vector<int> &input)
 	if (hasStraggler)
 		straggler = input.back();
 
-	// 2) ordenar pares por max
 	if (!pairs.empty())
 		sortPairsByMax(pairs, 0, (int)pairs.size() - 1);
 
-	// 3) construir main chain (maxes) e inserir o min do primeiro par
 	std::vector<Node> mainChain;
 	mainChain.reserve(input.size());
 	if (!pairs.empty())
@@ -151,15 +144,13 @@ static std::vector<int> fordJohnsonSortToVector(const std::vector<int> &input)
 			mainChain.push_back(Node(pairs[i].max, pairs[i].idx, true));
 	}
 
-	// 4) inserir os mins restantes na ordem Jacobsthal, cada um antes do seu max
-	// mins restantes correspondem aos pares [1..pairs.size()-1]
 	size_t minsCount = (pairs.size() > 0) ? (pairs.size() - 1) : 0;
 	std::vector<size_t> order = buildJacobsthalOrder(minsCount);
 
 	for (size_t oi = 0; oi < order.size(); ++oi)
 	{
-		size_t idx1 = order[oi]; // 1..minsCount (1-based)
-		size_t pairPos = idx1;   // corresponde ao par idx1 em pairs (pois pairs[0] já inserido)
+		size_t idx1 = order[oi];
+		size_t pairPos = idx1;
 		if (pairPos >= pairs.size())
 			continue;
 
@@ -171,11 +162,9 @@ static std::vector<int> fordJohnsonSortToVector(const std::vector<int> &input)
 		mainChain.insert(mainChain.begin() + pos, Node(pairs[pairPos].min, pIdx, false));
 	}
 
-	// Se por alguma razão a ordem não cobriu tudo (n pequeno), inserir o restante em ordem crescente de índice.
 	for (size_t i = 1; i < pairs.size(); ++i)
 	{
 		int pIdx = pairs[i].idx;
-		// já foi inserido?
 		bool found = false;
 		for (size_t k = 0; k < mainChain.size(); ++k)
 		{
@@ -191,14 +180,12 @@ static std::vector<int> fordJohnsonSortToVector(const std::vector<int> &input)
 		mainChain.insert(mainChain.begin() + pos, Node(pairs[i].min, pIdx, false));
 	}
 
-	// 5) inserir straggler (se existir) no lugar certo na cadeia inteira
 	if (hasStraggler)
 	{
 		size_t pos = lowerBoundByValue(mainChain, straggler, mainChain.size());
 		mainChain.insert(mainChain.begin() + pos, Node(straggler, -1, false));
 	}
 
-	// 6) extrair valores
 	std::vector<int> out;
 	out.reserve(mainChain.size());
 	for (size_t i = 0; i < mainChain.size(); ++i)
@@ -206,7 +193,7 @@ static std::vector<int> fordJohnsonSortToVector(const std::vector<int> &input)
 	return out;
 }
 
-} // namespace
+}
 
 void PmergeMe::caluclateTime(std::vector<int> &vec, std::deque<int> &deq, double &vecTime, double &deqTime)
 {

@@ -18,7 +18,6 @@ int main (int ac, char **av)
         std::string s(av[i]);
         if (s.empty())
             return (std::cerr << "Error" << std::endl, 1);
-        // somente inteiros positivos (sem sinais)
         for (size_t k = 0; k < s.size(); ++k)
         {
             if (s[k] < '0' || s[k] > '9')

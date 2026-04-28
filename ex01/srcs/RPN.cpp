@@ -1,5 +1,6 @@
 #include "../includes/RPN.hpp"
 #include <cctype>
+#include <sstream>
 
 RPN::RPN(){}
 RPN::~RPN(){}
@@ -15,8 +16,6 @@ RPN::RPN(const RPN &src) {
 
 void RPN::calc(std::string input)
 {
-	// O subject costuma exigir tokens separados por espaços:
-	// dígitos simples [0-9] e operadores [+ - * /].
 	while (!numbers.empty())
 		numbers.pop();
 
